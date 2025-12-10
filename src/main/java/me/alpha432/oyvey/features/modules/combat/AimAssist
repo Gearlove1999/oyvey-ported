@@ -1,0 +1,81 @@
+package me.alpha432.oyvey.features.modules.combat;
+
+import com.google.common.eventbus.Subscribe;
+import me.alpha432.oyvey.event.impl.PlayerUpdateEvent;
+import me.alpha432.oyvey.features.modules.Module;
+import me.alpha432.oyvey.features.modules.Module.Category;
+import net.minecraft.class_1297;
+import net.minecraft.class_1309;
+import net.minecraft.class_1657; // Spielerklasse
+import net.minecraft.class_1802; // MathHelper oder RotationUtils
+
+public class AimAssist extends Module {
+
+    private final float range = 5.0f; // Reichweite für Targeting
+    private final float speed = 10.0f; // Drehgeschwindigkeit
+
+    public AimAssist() {
+        super("AimAssist", "Helps you aim at entities", Category.COMBAT);
+    }
+
+    @Subscribe
+    public void onPlayerUpdate(PlayerUpdateEvent event) {
+        if (!this.isEnabled()) return;
+
+        class_1297 target = getNearestEntity(range);
+        if (target != null) {
+            aimAt(target);
+        }
+    }
+
+    private class_1297 getNearestEntity(float range) {
+        class_1297 closest = null;
+        double closestDistance = range;
+
+        for (class_1297 entity : mc.field_1687.method_18346()) { // Alle Entities in der Welt
+            if (entity instanceof class_1309 && entity != mc.field_1724) { // Nur Mobs, nicht der Spieler selbst
+                double distance = mc.field_1724.method_5739(entity); // Distanz zum Spieler
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closest = entity;
+                }
+            }
+        }
+        return closest;
+    }
+
+    private void aimAt(class_1297 target) {
+        double diffX = target.method_23317() - mc.field_1724.method_23317();
+        double diffY = (target.method_23318() + target.method_16538() / 2.0) - (mc.field_1724.method_23318() + mc.field_1724.method_16538() / 2.0);
+        double diffZ = target.method_23321() - mc.field_1724.method_23321();
+        double dist = Math.sqrt(diffX * diffX + diffZ * diffZ);
+
+        float yaw = (float) (Math.toDegrees(Math.atan2(diffZ, diffX)) - 90.0);
+        float pitch = (float) -Math.toDegrees(Math.atan2(diffY, dist));
+
+        // Smooth Rotation
+        mc.field_1724.field_5982 = smoothRotation(mc.field_1724.field_5982, yaw, speed);
+        mc.field_1724.field_5983 = smoothRotation(mc.field_1724.field_5983, pitch, speed);
+    }
+
+    private float smoothRotation(float current, float target, float speed) {
+        float delta = target - current;
+        delta = wrapAngle(delta);
+
+        if (delta > speed) delta = speed;
+        if (delta < -speed) delta = -speed;
+
+        return current + delta;
+    }
+
+    private float wrapAngle(float angle) {
+        while (angle <= -180.0f) angle += 360.0f;
+        while (angle > 180.0f) angle -= 360.0f;
+        return angle;
+    }
+
+    @Override
+    public String getDisplayInfo() {
+        return "AutoAim";
+    }
+}
