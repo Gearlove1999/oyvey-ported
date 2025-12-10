@@ -1,0 +1,39 @@
+package me.alpha432.oyvey.features.modules.combat;
+
+import me.alpha432.oyvey.features.modules.Module;
+import me.alpha432.oyvey.features.modules.Module.Category;
+import net.minecraft.class_1657; // Spieler
+
+import java.util.Random;
+
+public class LeftClicker extends Module {
+
+    private final Random random = new Random();
+    private long lastClick = 0;
+
+    private final int minCPS = 6;  // Untergrenze Clicks pro Sekunde
+    private final int maxCPS = 12; // Obergrenze Clicks pro Sekunde
+
+    public LeftClicker() {
+        super("LeftClicker", "Automatically clicks with a human-like CPS", Category.COMBAT);
+    }
+
+    @Override
+    public void onUpdate() {
+        if (!this.isEnabled()) return;
+
+        long currentTime = System.currentTimeMillis();
+        int cps = random.nextInt(maxCPS - minCPS + 1) + minCPS;
+        long delay = 1000L / cps; // Millisekunden pro Klick
+
+        if (currentTime - lastClick >= delay) {
+            mc.field_1724.method_36454(); // Linksklick ausführen
+            lastClick = currentTime;
+        }
+    }
+
+    @Override
+    public String getDisplayInfo() {
+        return "\u00a7eCPS"; // Zeigt CPS in gelb
+    }
+}
